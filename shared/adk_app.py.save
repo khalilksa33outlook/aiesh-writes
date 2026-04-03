@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from fastapi.responses import HTMLResponse
+
 import asyncio
 import os
 import logging
@@ -24,6 +24,7 @@ import uvicorn
 
 from google.adk.cli import fast_api
 from google.adk.cli.utils import logs
+from fastapi.responses import HTMLResponse
 
 
 warnings.filterwarnings(
@@ -247,19 +248,6 @@ def main(
         reload_agents=reload_agents,
         extra_plugins=extra_plugins,
     )
-    @app.get("/", response_class=HTMLResponse)
-    async def root():
-        return """
-        <html>
-            <head><title>Gemini Agent</title></head>
-            <body style="font-family: sans-serif; padding: 50px;">
-                <h1>🚀 Gemini Research Agent</h1>
-                <p>Connection Successful. Your Cloudflare tunnel is working!</p>
-                <p>Explore the API: <a href="/docs">/docs</a></p>
-            </body>
-        </html>
-        """
-
     if a2a:
         from starlette.middleware.base import BaseHTTPMiddleware
         from a2a_utils import a2a_card_dispatch
@@ -281,6 +269,19 @@ def main(
     server = uvicorn.Server(config)
     server.run()
 
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    return """
+    <html>
+        <head><title>Gemini Agent</title></head>
+        <body style="font-family: sans-serif; padding: 50px;">
+            <h1>🚀 Gemini Research Agent</h1>
+            <p>Connection Successful. Your Cloudflare tunnel is working!</p>
+            <p>Explore the API: <a href="/docs">/docs</a></p>
+        </body>
+    </html>
+    """
 ################################################################################
 if __name__ == "__main__":
     main()
+sudo systemctl restart gemini-agent
