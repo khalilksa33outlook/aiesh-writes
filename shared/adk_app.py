@@ -247,16 +247,88 @@ def main(
         reload_agents=reload_agents,
         extra_plugins=extra_plugins,
     )
+    @app.get("/api/history")
+    async def get_history(user_id: str = "kamy"):
+        import sqlite3
+        conn = sqlite3.connect('agent_storage.db')
+        cursor = conn.cursor()
+        # Fetch history specific to the user
+        cursor.execute("SELECT prompt, response, timestamp FROM agent_logs WHERE user_id = ? ORDER BY timestamp DESC", (user_id,))
+        rows = cursor.fetchall()
+        conn.close()
+        return [{"prompt": r[0], "response": r[1], "time": r[2]} for r in rows]
+
     @app.get("/", response_class=HTMLResponse)
     async def root():
         return """
-        <html>
-            <head><title>Gemini Agent</title></head>
-            <body style="font-family: sans-serif; padding: 50px;">
-                <h1>🚀 Gemini Research Agent</h1>
-                <p>Connection Successful. Your Cloudflare tunnel is working!</p>
-                <p>Explore the API: <a href="/docs">/docs</a></p>
-            </body>
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>IICC Gemini Dashboard</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <style>
+                body { background-color: #f8f9fa; }
+                .chat-card { border-radius: 15px; margin-bottom: 20px; border: none; shadow: 0 4px 6px rgba(0,0,0,0.1); }
+                .user-prompt { background-color: #e7f3ff; padding: 15px; border-radius: 10px 10px 0 0; font-weight: bold; }
+                .ai-response { background-color: #ffffff; padding: 15px; border-radius: 0 0 10px 10px; border-top: 1px solid #dee2e6; }
+            </style>
+        </head>
+        <body>
+            <nav class="navbar navbar-dark bg-dark mb-4">
+                <div class="container">
+                    <span class="navbar-brand">🚀 Insight Communications AI Portal</span>
+                    <span class="text-light">User: <strong>kamy</strong></span>
+                </div>
+            </nav>
+            
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12 mb-4">
+                        <div class="card p-4 shadow-sm">
+                            <h5>New Research Task</h5>
+                            <div class="input-group">
+                                <input type="text" id="promptInput" class="form-control" placeholder="Ask Gemini something...">
+                                <button class="btn btn-primary" onclick="askGemini()">Run Agent</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12">
+                        <h4 class="mb-3">Research History</h4>
+                        <div id="historyContainer">
+                            <div class="text-center">Loading history...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                async function loadHistory() {
+                    const res = await fetch('/api/history?user_id=kamy');
+                    const data = await res.json();
+                    const container = document.getElementById('historyContainer');
+                    container.innerHTML = data.map(item => `
+                        <div class="card chat-card shadow-sm">
+                            <div class="user-prompt">Q: ${item.prompt}</div>
+                            <div class="ai-response">${item.response}</div>
+                            <div class="p-2 text-muted small" style="background: #fff; border-radius: 10px;">${item.time}</div>
+                        </div>
+                    `).join('');
+                }
+
+                async function askGemini() {
+                    const prompt = document.getElementById('promptInput').value;
+                    // Here you would call your existing agent execution endpoint
+                    alert("Sending to Gemini: " + prompt);
+                    // After execution, reload history
+                    loadHistory();
+                }
+
+                loadHistory();
+            </script>
+        </body>
         </html>
         """
 
